@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type GetNumbers struct {
@@ -36,13 +37,22 @@ func (c *GetNumbers) Price(country int, service string) (error, int) {
 
 type GetResponse struct {
 	Response interface{} `json:"response"`
-	Tzid     int         `json:"tzid"`
+	Tzid     int64       `json:"tzid"`
+	Number   string      `json:"number"`
 }
 
-func (c *GetNumbers) Get(service string, country int) (error, int) {
+func (c *GetNumbers) Get(service string, country int, reject []int) (error, int64) {
 	m := make(map[string]string)
 	m["service"] = service
 	m["country"] = strconv.Itoa(country)
+	m["number"] = "true"
+	if len(reject) > 0 {
+		rejectStr := make([]string, 0, len(reject))
+		for _, r := range reject {
+			rejectStr = append(rejectStr, strconv.Itoa(r))
+		}
+		m["reject"] = "[" + strings.Join(rejectStr, ",") + "]"
+	}
 	result := c.client.get("getNum", m)
 
 	response := GetResponse{}
@@ -68,7 +78,7 @@ const (
 type StateResponse []State
 
 type State struct {
-	Tzid   int    `json:"tzid"`
+	Tzid   int64  `json:"tzid"`
 	Form   string `json:"form"`
 	Time   int    `json:"time"`
 	Number string `json:"number"`
@@ -105,10 +115,10 @@ func (c *GetNumbers) State(message_to_code int, orderby Order) (error, StateResp
 	return nil, response
 }
 
-func (c *GetNumbers) StateOne(tzid int, message_to_code int) (error, State) {
+func (c *GetNumbers) StateOne(tzid int64, message_to_code int) (error, State) {
 	m := make(map[string]string)
 	m["message_to_code"] = strconv.Itoa(message_to_code)
-	m["tzid"] = strconv.Itoa(tzid)
+	m["tzid"] = fmt.Sprintf("%d", tzid)
 	m["msg_list"] = "1"
 	m["clean"] = "0"
 	m["type"] = "index"
@@ -128,9 +138,9 @@ func (c *GetNumbers) StateOne(tzid int, message_to_code int) (error, State) {
 	return nil, response[0]
 }
 
-func (c *GetNumbers) Next(tzid int) (error, bool) {
+func (c *GetNumbers) Next(tzid int64) (error, bool) {
 	m := make(map[string]string)
-	m["tzid"] = strconv.Itoa(tzid)
+	m["tzid"] = fmt.Sprintf("%d", tzid)
 	result := c.client.get("setOperationRevise", m)
 
 	response := Default{}
@@ -146,9 +156,9 @@ func (c *GetNumbers) Next(tzid int) (error, bool) {
 	return nil, true
 }
 
-func (c *GetNumbers) Close(tzid int) (error, bool) {
+func (c *GetNumbers) Close(tzid int64) (error, bool) {
 	m := make(map[string]string)
-	m["tzid"] = strconv.Itoa(tzid)
+	m["tzid"] = fmt.Sprintf("%d", tzid)
 	result := c.client.get("setOperationOk", m)
 
 	response := Default{}
