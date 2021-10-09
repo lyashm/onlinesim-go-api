@@ -1,5 +1,5 @@
-module github.com/s00d/onlinesim-go-api
+module github.com/lyashm/onlinesim-go-api
 
-go 1.12
+go 1.17
 
-require github.com/ddliu/go-httpclient v0.6.7
+require github.com/ddliu/go-httpclient v0.6.9
